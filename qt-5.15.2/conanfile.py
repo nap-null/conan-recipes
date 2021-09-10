@@ -22,12 +22,22 @@ class QtConan(ConanFile):
             '-confirm-license',
             '-nomake examples',
             '-nomake tests',
-            '-release'
         ]
 
+        if self.settings.build_type == 'Debug':
+            args.append('-debug')
+            args.append('-no-framework')
+        else:
+            args.append('-release')
+
         if self.settings.os == 'Android':
-            args.append('-android-arch')
-            args.append('arm64-v8a')
+            if self.settings.arch:
+                args.append('-android-arch')
+                args.append('arm64-v8a' if self.settings.arch == 'armv8' else 'armeabi-v7a')
+            else:
+                args.append('-android-abis arm64-v8a,armeabi-v7a')
+        else:
+            args.append('-static')
 
         self.run(f"{self.source_folder}/configure {' '.join(args)}")
 
