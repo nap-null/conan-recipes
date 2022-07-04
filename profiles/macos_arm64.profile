@@ -1,8 +1,12 @@
 [settings]
-os=iOS
-os.version=13.0
+os=Macos
+os_build=Macos
 arch=armv8
+arch_build=armv8
 compiler=apple-clang
 compiler.version=12.0
 compiler.libcxx=libc++
 build_type=Release
+[options]
+[build_requires]
+[env]
