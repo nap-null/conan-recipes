@@ -7,8 +7,8 @@ class QtConan(ConanFile):
     version = "5.15.2"
     settings = "os", "arch", "compiler", "build_type"
 
-    exports = [ "patches/*.diff" ]
-    patches = [ ]
+    exports = ['patches/*.diff']
+    patches = []
 
     no_copy_source = True
 
