@@ -6,42 +6,47 @@ import pprint
 
 class QtConan(ConanFile):
     name = "qt"
-    version = "6.3.0"
+    version = "6.4.0"
     settings = "os", "arch", "compiler", "build_type"
 
-    exports = [ "patches/*.diff" ]
-    patches = [ ]
+    exports = ['patches/*.diff']
+    patches = []
 
     no_copy_source = True
+    short_paths = True
 
     def build_requirements(self):
         if self.settings.os == 'iOS':
-            self.build_requires("qt/6.3.0")
+            self.build_requires(f"{self.name}/{self.version}")
+
+    def requirements(self):
+        if self.settings.os == 'Linux':
+            self.requires("OpenSSL/1.1.1q@nap/devel")
 
     def source(self):
-        git = tools.Git(folder='qt5')
+        git = tools.Git(folder='qt')
         git.clone('https://github.com/qt/qt5.git')
         git.checkout('v' + self.version)
 
-        with tools.chdir('qt5'):
-            self.run('perl init-repository')
+        with tools.chdir('qt'):
+            self.run('perl init-repository --module-subset=default,-qtwebengine,-qtwebplugin,-qtvirtualkeyboard,-qtgamepad,-qtquick3dphysics')
 
             for patch in self.patches:
                 print(f"Applying patch '{patch}'...")
                 self.run(f'git apply ../patches/{patch}')
 
-            self.run('rm -rf qtwebglplugin qtvirtualkeyboard qtgamepad')
-
     def build_configure(self):
-
         args = [
             '-prefix', os.path.join(self.build_folder, 'package'),
-            '-skip qtwebengine',
+            '-no-feature-designer',
             '-opensource',
             '-confirm-license',
             '-nomake examples',
             '-nomake tests',
         ]
+
+        #if self.settings.os == 'Linux':
+        #    args.append('-openssl-linked')
 
         if self.xplatform:
             args.append('-xplatform')
@@ -64,6 +69,8 @@ class QtConan(ConanFile):
 
         if self.settings.os == 'Linux':
             args.append('-no-opengl')
+            if self.settings.arch != 'armv7':
+                args.append('-xcb')
 
         if self.settings.os == 'iOS':
             args.append('-sdk iphoneos')
@@ -71,10 +78,15 @@ class QtConan(ConanFile):
             args.append('-qt-host-path')
             args.append(self.qt_host_path)
 
+        if self.settings.os == 'Linux':
+            args.append('--')
+            args.append('-D')
+            args.append(f'OPENSSL_ROOT_DIR="{self.openssl_root_dir}"')
+
         if self.settings.os == 'Windows':
-            self.run(f"{self.source_folder}/qt5/configure.bat {' '.join(args)}")
+            self.run(f"{self.source_folder}/qt/configure.bat {' '.join(args)}")
         else:
-            self.run(f"{self.source_folder}/qt5/configure {' '.join(args)}")
+            self.run(f"{self.source_folder}/qt/configure {' '.join(args)}")
 
     def build_make(self):
         self.run('cmake --build .')
@@ -110,5 +122,9 @@ class QtConan(ConanFile):
 
     @property
     def qt_host_path(self):
-        return self.deps_env_info['qt/6.3.0'].rootpath
+        return self.deps_env_info[f'{self.name}/{self.version}'].rootpath
+
+    @property
+    def openssl_root_dir(self):
+        return self.deps_cpp_info['OpenSSL'].rootpath
 
