@@ -1,5 +1,6 @@
 from conans import ConanFile, AutoToolsBuildEnvironment, tools
 
+
 class FFmpegConan(ConanFile):
     name = "ffmpeg"
     version = "4.4"
@@ -13,12 +14,16 @@ class FFmpegConan(ConanFile):
     def build(self):
         autotools = AutoToolsBuildEnvironment(self)
         autotools.flags = ['-O2', '-g']
-        autotools.configure(
-            args=[
-                '--enable-shared',
-                '--disable-asm',
-                '--disable-doc',
-            ]
-        )
+
+        args = [
+            '--enable-shared',
+            '--disable-asm',
+            '--disable-doc',
+        ]
+
+        if self.settings.build_type == 'Debug':
+            args.append('--disable-stripping')
+
+        autotools.configure(args=args)
         autotools.make()
         autotools.install()
