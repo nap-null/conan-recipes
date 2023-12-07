@@ -5,12 +5,12 @@ arch=armv8
 build_type=Release
 compiler=clang
 compiler.libcxx=libc++
-compiler.version=11
+compiler.version=14
 os=Android
-os.api_level=21
+os.api_level=28
 
-[build_requires]
-android-ndk/r22b
+[tool_requires]
+android-ndk/r25b
 
 [options]
 

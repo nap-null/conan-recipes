@@ -1,13 +1,19 @@
 import os
-from conans import ConanFile, tools
+from conans import ConanFile, tools, __version__
 from conans.tools import os_info, SystemPackageTool
+from conans.errors import ConanInvalidConfiguration
 from conan.tools.microsoft import is_msvc
 
 
 class QtConan(ConanFile):
     name = "qt"
-    version = "6.4.0"
     settings = "os", "arch", "compiler", "build_type"
+    options = {
+        'shared': [True, False],
+    }
+    default_options = {
+        'shared': True,
+    }
 
     exports = ['patches/*.diff']
     patches = []
@@ -23,9 +29,21 @@ class QtConan(ConanFile):
     no_copy_source = True
     short_paths = True
 
+    def configure(self):
+        if __version__ != '1.60.0':
+            raise ConanInvalidConfiguration('This recipe requires conan 1.60.0')
+
+        if self.settings.os == 'Android':
+            if not self.options.shared:
+                raise ConanInvalidConfiguration('Static builds are not supported on Android')
+
     def build_requirements(self):
-        if self.settings.os == 'iOS':
-            self.build_requires(f"{self.name}/{self.version}")
+        if self.settings.os in ['iOS', 'Android', 'Emscripten']:
+            self.tool_requires(f"{self.name}/{self.version}@nap/devel")
+
+        # TODO: Now I only managed to build Qt with manually install emsdk :(
+        # if self.settings.os == 'Emscripten':
+        #     self.tool_requires("emsdk/3.1.29")
 
         if os_info.is_linux:
             if self.settings.arch != 'armv7':
@@ -74,7 +92,8 @@ class QtConan(ConanFile):
         ]
 
         if self.xplatform:
-            args.append('-xplatform')
+            # TODO: Android build fix:
+            args.append('-platform')
             args.append(self.xplatform)
 
         if self.settings.build_type == 'Debug':
@@ -87,10 +106,14 @@ class QtConan(ConanFile):
             if self.settings.arch == 'x86_64':
                 args.append('-android-abis arm64-v8a,armeabi-v7a')
             else:
-                args.append('-android-arch')
+                args.append('-android-abis')
                 args.append('arm64-v8a' if self.settings.arch == 'armv8' else 'armeabi-v7a')
+            args.append('-android-ndk')
+            args.append(os.environ['ANDROID_NDK_ROOT'])
+            args.append('-android-sdk')
+            args.append(os.environ['ANDROID_SDK_ROOT'])
         else:
-            args.append('-static')
+            args.append('-shared' if self.options.shared else '-static')
 
         if self.settings.os == 'Linux':
             args.append('-no-opengl')
@@ -100,6 +123,7 @@ class QtConan(ConanFile):
         if self.settings.os == 'iOS':
             args.append('-sdk iphoneos')
 
+        if self.settings.os in ['iOS', 'Android', 'Emscripten']:
             args.append('-qt-host-path')
             args.append(self.qt_host_path)
 
@@ -139,13 +163,15 @@ class QtConan(ConanFile):
             return 'macx-ios-clang'
         if self.settings.os == 'Android':
             return 'android-clang'
+        if self.settings.os == 'Emscripten':
+            return 'wasm-emscripten'
         if self.settings.os in ['Windows', 'Linux']:
             return None
         return 'macx-clang'
 
     @property
     def qt_host_path(self):
-        return self.deps_env_info[f'{self.name}/{self.version}'].rootpath
+        return self.dependencies.build[self.name].package_folder
 
     @property
     def openssl_root_dir(self):
