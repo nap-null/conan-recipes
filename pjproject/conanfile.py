@@ -1,10 +1,15 @@
-import glob
 from conans import ConanFile, AutoToolsBuildEnvironment, tools
 
 class PjProjectConan(ConanFile):
     name = "pjproject"
     version = "2.12.1"
     settings = "os", "arch", "compiler", "build_type"
+    options = {
+        'shared': [True, False],
+    }
+    default_options = {
+        'shared': True,
+    }
 
     def requirements(self):
         self.requires("OpenSSL/1.1.1q@nap/devel")
@@ -28,22 +33,28 @@ class PjProjectConan(ConanFile):
 
     def build(self):
         autotools = AutoToolsBuildEnvironment(self)
-        autotools.flags = ['-O2', '-g']
-        autotools.configure(
-            args=[
-                '--enable-shared',
-                '--disable-sdl',
-                '--disable-ffmpeg',
-                f'--with-ssl="{self.openssl_root_dir}"'
-            ]
-        )
+
+        if self.settings.build_type == 'Debug':
+            autotools.flags = ['-O2', '-g']
+        else:
+            autotools.flags = ['-O2']
+
+        config_options = [
+            '--disable-sdl',
+            '--disable-ffmpeg',
+            f'--with-ssl="{self.openssl_root_dir}"'
+        ]
+
+        if self.options.shared:
+            config_options.append('--enable-shared')
+            config_options.append('--disable-static')
+        else:
+            config_options.append('--enable-static')
+            config_options.append('--disable-shared')
+
+        autotools.configure(args=config_options)
         autotools.make(args=['-j1'])
         autotools.install()
-
-    #def package(self):
-    #    with tools.chdir(self.package_folder + "/lib"):
-    #        for file in list(glob.glob('*.dylib')):
-    #            self.run(f"install_name_tool -id @executable_path/../lib/{file} {file}")
 
     @property
     def openssl_root_dir(self):

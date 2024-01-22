@@ -30,7 +30,7 @@ class QtConan(ConanFile):
     short_paths = True
 
     def configure(self):
-        if __version__ != '1.60.0':
+        if __version__ != '1.60.0' and __version__ != '1.59.0':
             raise ConanInvalidConfiguration('This recipe requires conan 1.60.0')
 
         if self.settings.os == 'Android':
