@@ -1,4 +1,4 @@
-from conans import ConanFile, CMake, VisualStudioBuildEnvironment, tools
+from conans import ConanFile, tools
 
 
 class OpenSSLConan(ConanFile):
@@ -31,6 +31,9 @@ class OpenSSLConan(ConanFile):
         if self.settings.os == 'Linux' and self.settings.arch == 'armv7':
             options.append('-march=armv7-a')
             options.append('-Wa,--noexecstack')
+
+        if self.settings.build_type == 'Debug':
+            options.append('-O2 -g')
 
         self.run(" ".join(options))
         self.run('make -j')

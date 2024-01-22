@@ -18,16 +18,9 @@ class OrangePiGPIOConan(ConanFile):
             with tools.chdir('wiringPi'):
                 self.run('make')
 
-            with tools.chdir('devLib'):
-                self.run('make')
-
     def package(self):
         with tools.chdir(self.name):
             with tools.chdir('wiringPi'):
-                self.run(f'make PREFIX=/ DESTDIR="{self.package_folder}" install')
-
-            with tools.chdir('devLib'):
-                self.run("sed -i 's,ln -sf,ln -sfr,g' Makefile")
                 self.run(f'make PREFIX=/ DESTDIR="{self.package_folder}" install')
 
     def package_info(self):
