@@ -19,11 +19,16 @@ class QtConan(ConanFile):
     patches = []
 
     ubuntu_desktop_requires = (
+        'libegl1-mesa-dev',
+        'libgl1-mesa-dev',
+        'libglu1-mesa-dev',
+        'libwayland-dev',
         'libx11-xcb-dev',
-        'libxkbcommon-dev',
-        'libxkbcommon-x11-dev',
         'libx11-xcb-dev',
         'libxcb*-dev',
+        'libxkbcommon-dev',
+        'libxkbcommon-x11-dev',
+        'mesa-common-dev',
     )
 
     no_copy_source = True
@@ -68,10 +73,17 @@ class QtConan(ConanFile):
                 for module
                 in
                 (
+                    '3d',
+                    '5compat',
+                    'datavis3d',
+                    'doc',
                     'webengine',
                     'webplugin',
+                    'webview',
+                    'webchannel',
                     'virtualkeyboard',
                     'gamepad',
+                    'quick3d',
                     'quick3dphysics',
                 )
             )
@@ -116,7 +128,7 @@ class QtConan(ConanFile):
             args.append('-shared' if self.options.shared else '-static')
 
         if self.settings.os == 'Linux':
-            args.append('-no-opengl')
+            args.append('-opengl')
             if self.settings.arch != 'armv7':
                 args.append('-xcb')
 
@@ -156,6 +168,7 @@ class QtConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.builddirs = [self.package_folder]
+        self.env_info.path.append(self.package_folder + "/bin")
 
     @property
     def xplatform(self):
