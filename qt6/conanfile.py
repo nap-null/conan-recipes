@@ -1,8 +1,12 @@
 import os
-from conans import ConanFile, tools, __version__
+from conans import ConanFile, tools, __version__ as conan_version
 from conans.tools import os_info, SystemPackageTool
 from conans.errors import ConanInvalidConfiguration
 from conan.tools.microsoft import is_msvc
+
+
+assert conan_version >= tools.Version('1.60'), 'Conan version is too old.'
+assert conan_version < tools.Version('2.0'), 'Only Conan 1.x supported'
 
 
 class QtConan(ConanFile):
@@ -35,9 +39,6 @@ class QtConan(ConanFile):
     short_paths = True
 
     def configure(self):
-        if __version__ != '1.60.0' and __version__ != '1.59.0':
-            raise ConanInvalidConfiguration('This recipe requires conan 1.60.0')
-
         if self.settings.os == 'Android':
             if not self.options.shared:
                 raise ConanInvalidConfiguration('Static builds are not supported on Android')
@@ -52,7 +53,7 @@ class QtConan(ConanFile):
 
         if os_info.is_linux:
             if self.settings.arch != 'armv7':
-                if os_info.linux_distro != 'ubuntu' or os_info.os_version != '20.04':
+                if os_info.linux_distro != 'ubuntu' or (os_info.os_version != '20.04' and os_info.os_version != '22.04'):
                     raise RuntimeError(f'Unsupported Linux: {os_info.linux_distro} {os_info.os_version}')
 
                 installer = SystemPackageTool()
@@ -85,6 +86,17 @@ class QtConan(ConanFile):
                     'gamepad',
                     'quick3d',
                     'quick3dphysics',
+                    'texttospeech',
+                    'speech',
+                    'multimedia',
+                    'wayland',
+                    'mqtt',
+                    'lottie',
+                    'sharedtools',
+                    'scxml',
+                    'sensors',
+                    'topcua',
+                    'charts',
                 )
             )
             self.run(f"perl init-repository --module-subset=default,{','.join(disabled_modules)}")
