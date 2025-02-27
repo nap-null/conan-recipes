@@ -8,6 +8,14 @@ class OpenSSLConan(ConanFile):
 
     patches = []
 
+    options = {
+        "shared": [ True, False ],
+    }
+
+    default_options = {
+        "shared": False,
+    }
+
     def source(self):
         git = tools.Git()
         git.clone('https://github.com/openssl/openssl.git')
@@ -21,7 +29,7 @@ class OpenSSLConan(ConanFile):
     def build(self):
         options = [
             './Configure',
-            'shared',
+            'shared' if self.options.shared else 'static',
             'no-tests',
             '--prefix=/',
         ]
